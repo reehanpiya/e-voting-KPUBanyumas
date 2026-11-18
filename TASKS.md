@@ -171,7 +171,7 @@ Semua endpoint API CodeIgniter wajib mengembalikan struktur JSON berikut:
   - `ballots` (`id` UUID, `candidate_id` — **wajib tanpa relasi ke pemilih/token**).
   - `audit_logs` (`id`, `user_id` nullable, `action`, `ip_address`, `created_at`).
 - **DoD:** Migration & Seeder akun Super Admin KPU berhasil dieksekusi tanpa error.
-- **Assignee:** `[ ... ]` | **Status:** `TODO`
+- **Assignee:** `Backend Developer 1` | **Status:** `DONE`
 
 #### [TASK-BE-02] Autentikasi Bearer Token & Strict Role-Based Filters
 - **Deskripsi:** 
@@ -181,7 +181,7 @@ Semua endpoint API CodeIgniter wajib mengembalikan struktur JSON berikut:
   - Middleware `PrimaryAdminMiddleware`: Memastikan aksi status (`start`, `close`, `finalize`, `publish`) hanya bisa diakses oleh Admin Utama (`is_primary = true`).
   - Proteksi: Kembalikan HTTP 403 jika Super Admin mengakses DPT, kandidat, suara, atau hasil.
 - **DoD:** Test pengujian akses membuktikan Admin Pendukung & Super Admin diblokir pada aksi terlarang.
-- **Assignee:** `[ ... ]` | **Status:** `TODO`
+- **Assignee:** `Backend Developer 1` | **Status:** `DONE`
 
 #### [TASK-BE-03] Election Finite State Machine & Audit Trail Service
 - **Deskripsi:**
@@ -190,7 +190,7 @@ Semua endpoint API CodeIgniter wajib mengembalikan struktur JSON berikut:
   - Validasi bahwa aksi hanya bisa dipicu sesuai status (misal: dilarang ubah DPT saat `ACTIVE`).
   - Catat setiap perubahan status ke tabel `audit_logs`.
 - **DoD:** Status tidak bisa loncat atau mundur; log mencatat pelaku dan IP address.
-- **Assignee:** `[ ... ]` | **Status:** `TODO`
+- **Assignee:** `Backend Developer 1` | **Status:** `DONE`
 
 #### [TASK-BE-04] API Super Admin (Toggle Registrasi, Approve 5 Akun, Monev & Cleanup)
 - **Deskripsi:**
@@ -200,7 +200,7 @@ Semua endpoint API CodeIgniter wajib mengembalikan struktur JSON berikut:
   - `GET /api/super/progress`: Status tahapan pemilu (hanya persentase tahapan global).
   - `POST /api/super/cleanup`: Hapus data operasional pemilu dan reset ke `READY` (validasi: laporan sudah diunduh & konfirmasi teks `HAPUS DATA`).
 - **DoD:** Kredensial 5 akun ter-generate dengan password acak aman; data terhapus bersih saat cleanup.
-- **Assignee:** `[ ... ]` | **Status:** `TODO`
+- **Assignee:** `Backend Developer 1` | **Status:** `DONE`
 
 ---
 
