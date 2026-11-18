@@ -6,18 +6,22 @@ namespace App\Database\Migrations;
 
 use CodeIgniter\Database\Migration;
 
-class CreateAuditLogsTable extends Migration
+final class CreateAuditLogsTable extends Migration
 {
     public function up(): void
     {
         $this->forge->addField([
             'id' => [
-                'type'           => 'INT',
+                'type'           => 'BIGINT',
+                'constraint'     => 20,
+                'unsigned'       => true,
                 'auto_increment' => true,
             ],
             'user_id' => [
-                'type' => 'INT',
-                'null' => true,
+                'type'       => 'BIGINT',
+                'constraint' => 20,
+                'unsigned'   => true,
+                'null'       => true,
             ],
             'action' => [
                 'type'       => 'VARCHAR',
@@ -26,15 +30,16 @@ class CreateAuditLogsTable extends Migration
             'ip_address' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 45,
-                'null'       => true,
             ],
             'created_at' => [
-                'type' => 'TIMESTAMP WITH TIME ZONE',
+                'type' => 'DATETIME',
                 'null' => true,
             ],
         ]);
 
         $this->forge->addKey('id', true);
+        $this->forge->addKey('action');
+        $this->forge->addKey('created_at');
         $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'SET NULL');
         $this->forge->createTable('audit_logs');
     }

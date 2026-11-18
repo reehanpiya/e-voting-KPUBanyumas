@@ -6,7 +6,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class ElectionModel extends Model
+final class ElectionModel extends Model
 {
     protected $table            = 'elections';
     protected $primaryKey       = 'id';
@@ -27,8 +27,6 @@ class ElectionModel extends Model
         'dpt_locked_at',
         'candidates_locked_at',
         'report_downloaded_at',
-        'created_at',
-        'updated_at',
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -41,10 +39,12 @@ class ElectionModel extends Model
     protected $updatedField  = 'updated_at';
 
     /**
-     * Mengambil sesi pemilu aktif / terkini (Single-Tenant Sequential)
+     * Get the active single-tenant election session.
+     *
+     * @return array<string, mixed>|null
      */
     public function getActiveSession(): ?array
     {
-        return $this->orderBy('id', 'DESC')->first();
+        return $this->orderBy('id', 'ASC')->first();
     }
 }

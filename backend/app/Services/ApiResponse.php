@@ -9,7 +9,7 @@ use CodeIgniter\HTTP\ResponseInterface;
 final class ApiResponse
 {
     /**
-     * Respon Sukses (HTTP 200/201)
+     * Success response untuk Track 1 dan Track 2.
      */
     public static function success(
         string $message,
@@ -20,14 +20,14 @@ final class ApiResponse
             ->setStatusCode($statusCode)
             ->setJSON([
                 'status'  => 'success',
+                'success' => true,
                 'message' => $message,
                 'data'    => $data,
             ]);
     }
 
     /**
-     * Respon Gagal Validasi Input (HTTP 422)
-     * Format sesuai TASKS.md
+     * Validation failure response untuk Track 2.
      */
     public static function fail(
         string $message,
@@ -38,25 +38,77 @@ final class ApiResponse
             ->setStatusCode($statusCode)
             ->setJSON([
                 'status'  => 'fail',
+                'success' => false,
                 'message' => $message,
                 'errors'  => $errors,
             ]);
     }
 
     /**
-     * Respon Error Sistem / Otorisasi / Bisnis (HTTP 400/401/403/404/500)
-     * Format sesuai TASKS.md
+     * Error response yang kompatibel dengan kedua pola pemanggilan:
+     *
+     * Track 2: error($message, 400)
+     * Track 1: error($message, $errors, 401)
      */
     public static function error(
         string $message,
-        int $statusCode = 400,
+        array|int $errors = [],
+        ?int $statusCode = null,
     ): ResponseInterface {
+        if (is_int($errors)) {
+            $statusCode = $errors;
+            $errors = [];
+        }
+
+        $statusCode ??= 400;
+
         return service('response')
             ->setStatusCode($statusCode)
             ->setJSON([
                 'status'  => 'error',
+                'success' => false,
                 'message' => $message,
+                'errors'  => $errors,
             ]);
     }
-}
 
+    /**
+     * 401 Unauthorized.
+     */
+    public static function unauthorized(
+        string $message = 'Autentikasi gagal atau token tidak valid.',
+        array $errors = [],
+    ): ResponseInterface {
+        return self::error($message, $errors, 401);
+    }
+
+    /**
+     * 403 Forbidden.
+     */
+    public static function forbidden(
+        string $message = 'Anda tidak memiliki hak akses untuk aksi ini.',
+        array $errors = [],
+    ): ResponseInterface {
+        return self::error($message, $errors, 403);
+    }
+
+    /**
+     * 404 Not Found.
+     */
+    public static function notFound(
+        string $message = 'Data tidak ditemukan.',
+        array $errors = [],
+    ): ResponseInterface {
+        return self::error($message, $errors, 404);
+    }
+
+    /**
+     * 422 Validation error.
+     */
+    public static function validation(
+        string $message = 'Validasi input gagal.',
+        array $errors = [],
+    ): ResponseInterface {
+        return self::error($message, $errors, 422);
+    }
+}

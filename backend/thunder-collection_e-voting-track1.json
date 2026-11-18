@@ -1,0 +1,215 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "E-Voting KPU Banyumas - Track 1",
+  "collectionId": "9b64c12a-605d-4f1a-b0aa-9a706596b539",
+  "dateExported": "2026-11-17",
+  "version": "1.1",
+  "folders": [
+    {
+      "_id": "folder_health",
+      "name": "1. Health Check",
+      "containerId": "",
+      "sortNum": 10000
+    },
+    {
+      "_id": "folder_auth",
+      "name": "2. Authentication",
+      "containerId": "",
+      "sortNum": 20000
+    },
+    {
+      "_id": "folder_super_admin",
+      "name": "3. Super Admin (KPU)",
+      "containerId": "",
+      "sortNum": 30000
+    }
+  ],
+  "requests": [
+    {
+      "_id": "req_health",
+      "colId": "9b64c12a-605d-4f1a-b0aa-9a706596b539",
+      "containerId": "folder_health",
+      "name": "Health Check",
+      "url": "{{base_url}}/api/health",
+      "method": "GET",
+      "sortNum": 10000,
+      "created": "2026-11-17",
+      "modified": "2026-11-17",
+      "headers": [],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_login",
+      "colId": "9b64c12a-605d-4f1a-b0aa-9a706596b539",
+      "containerId": "folder_auth",
+      "name": "Login Super Admin",
+      "url": "{{base_url}}/api/admin/login",
+      "method": "POST",
+      "sortNum": 20000,
+      "created": "2026-11-17",
+      "modified": "2026-11-17",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"username\": \"superadmin\",\n  \"password\": \"KpuBanyumas2026!\"\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "req_me",
+      "colId": "9b64c12a-605d-4f1a-b0aa-9a706596b539",
+      "containerId": "folder_auth",
+      "name": "Get Authenticated User (Me)",
+      "url": "{{base_url}}/api/admin/me",
+      "method": "GET",
+      "sortNum": 21000,
+      "created": "2026-11-17",
+      "modified": "2026-11-17",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_logout",
+      "colId": "9b64c12a-605d-4f1a-b0aa-9a706596b539",
+      "containerId": "folder_auth",
+      "name": "Logout Admin",
+      "url": "{{base_url}}/api/admin/logout",
+      "method": "POST",
+      "sortNum": 22000,
+      "created": "2026-11-17",
+      "modified": "2026-11-17",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_toggle_reg",
+      "colId": "9b64c12a-605d-4f1a-b0aa-9a706596b539",
+      "containerId": "folder_super_admin",
+      "name": "Toggle Buka/Tutup Registrasi",
+      "url": "{{base_url}}/api/super/registration-toggle",
+      "method": "POST",
+      "sortNum": 30000,
+      "created": "2026-11-17",
+      "modified": "2026-11-17",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"is_open\": true\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "req_get_registrations",
+      "colId": "9b64c12a-605d-4f1a-b0aa-9a706596b539",
+      "containerId": "folder_super_admin",
+      "name": "List Permohonan Sekolah (PENDING)",
+      "url": "{{base_url}}/api/super/registrations",
+      "method": "GET",
+      "sortNum": 31000,
+      "created": "2026-11-17",
+      "modified": "2026-11-17",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_approve_registration",
+      "colId": "9b64c12a-605d-4f1a-b0aa-9a706596b539",
+      "containerId": "folder_super_admin",
+      "name": "Approve Permohonan & Generate 5 Akun",
+      "url": "{{base_url}}/api/super/registrations/1/approve",
+      "method": "POST",
+      "sortNum": 32000,
+      "created": "2026-11-17",
+      "modified": "2026-11-17",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_get_progress",
+      "colId": "9b64c12a-605d-4f1a-b0aa-9a706596b539",
+      "containerId": "folder_super_admin",
+      "name": "Monitoring Progres Tahapan Pemilu",
+      "url": "{{base_url}}/api/super/progress",
+      "method": "GET",
+      "sortNum": 33000,
+      "created": "2026-11-17",
+      "modified": "2026-11-17",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "params": [],
+      "tests": []
+    },
+    {
+      "_id": "req_cleanup",
+      "colId": "9b64c12a-605d-4f1a-b0aa-9a706596b539",
+      "containerId": "folder_super_admin",
+      "name": "Cleanup Data Pemilu (Reset ke READY)",
+      "url": "{{base_url}}/api/super/cleanup",
+      "method": "POST",
+      "sortNum": 34000,
+      "created": "2026-11-17",
+      "modified": "2026-11-17",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"confirmation_code\": \"HAPUS DATA\"\n}",
+        "form": []
+      },
+      "tests": []
+    }
+  ]
+}

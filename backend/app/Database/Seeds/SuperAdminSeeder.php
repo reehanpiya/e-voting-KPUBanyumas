@@ -4,47 +4,59 @@ declare(strict_types=1);
 
 namespace App\Database\Seeds;
 
+use App\Models\ElectionModel;
+use App\Models\UserModel;
 use CodeIgniter\Database\Seeder;
-use CodeIgniter\I18n\Time;
 
-class SuperAdminSeeder extends Seeder
+final class SuperAdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $username = env('SUPER_ADMIN_USERNAME', 'superadmin');
-        $email    = env('SUPER_ADMIN_EMAIL', 'admin@kpubanyumas.go.id');
-        $password = env('SUPER_ADMIN_PASSWORD', 'AdminKPU2026!');
+        $username = trim((string) env('SUPER_ADMIN_USERNAME')) ?: 'superadmin';
+        $email    = trim((string) env('SUPER_ADMIN_EMAIL')) ?: 'admin@kpu-banyumas.go.id';
+        $password = trim((string) env('SUPER_ADMIN_PASSWORD')) ?: 'KpuBanyumas2026!';
 
-        $now = Time::now()->toDateTimeString();
+        $userModel = new UserModel();
 
-        $data = [
-            'name'          => 'Super Admin KPU',
+        // 1. Seed or update Super Admin user
+        $existingAdmin = $userModel->where('role', UserModel::ROLE_SUPER_ADMIN)->first();
+
+        if ($existingAdmin === null && $email !== '') {
+            $existingAdmin = $userModel->findByUsernameOrEmail($email);
+        }
+
+        $adminData = [
+            'name'          => 'Super Admin KPU Banyumas',
             'username'      => $username,
             'email'         => $email,
             'password_hash' => password_hash($password, PASSWORD_BCRYPT),
-            'role'          => 'super_admin',
+            'role'          => UserModel::ROLE_SUPER_ADMIN,
             'is_primary'    => true,
             'election_id'   => null,
-            'created_at'    => $now,
-            'updated_at'    => $now,
         ];
 
-        // Cek apakah super admin sudah ada sebelumnya
-        $existing = $this->db->table('users')
-            ->where('username', $username)
-            ->orWhere('role', 'super_admin')
-            ->get()
-            ->getRow();
-
-        if (! $existing) {
-            $this->db->table('users')->insert($data);
+        if ($existingAdmin !== null) {
+            $userModel->update($existingAdmin['id'], $adminData);
         } else {
-            $this->db->table('users')
-                ->where('id', $existing->id)
-                ->update([
-                    'password_hash' => password_hash($password, PASSWORD_BCRYPT),
-                    'updated_at'    => $now,
-                ]);
+            $userModel->insert($adminData);
+        }
+
+        // 2. Ensure default initial election session exists with status READY
+        $electionModel  = new ElectionModel();
+        $activeElection = $electionModel->getActiveSession();
+
+        if ($activeElection === null) {
+            $electionModel->insert([
+                'status'               => 'READY',
+                'is_registration_open' => false,
+                'school_name'          => null,
+                'npsn'                 => null,
+                'contact_name'         => null,
+                'contact_phone'        => null,
+                'contact_email'        => null,
+                'start_time'           => null,
+                'end_time'             => null,
+            ]);
         }
     }
 }

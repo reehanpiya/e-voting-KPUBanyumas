@@ -6,18 +6,20 @@ namespace App\Database\Migrations;
 
 use CodeIgniter\Database\Migration;
 
-class CreateUsersTable extends Migration
+final class CreateUsersTable extends Migration
 {
     public function up(): void
     {
         $this->forge->addField([
             'id' => [
-                'type'           => 'INT',
+                'type'           => 'BIGINT',
+                'constraint'     => 20,
+                'unsigned'       => true,
                 'auto_increment' => true,
             ],
             'name' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 100,
+                'constraint' => 255,
             ],
             'username' => [
                 'type'       => 'VARCHAR',
@@ -26,7 +28,7 @@ class CreateUsersTable extends Migration
             ],
             'email' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 100,
+                'constraint' => 255,
                 'null'       => true,
             ],
             'password_hash' => [
@@ -35,36 +37,30 @@ class CreateUsersTable extends Migration
             ],
             'role' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 20,
+                'constraint' => 30,
             ],
             'is_primary' => [
                 'type'    => 'BOOLEAN',
                 'default' => false,
             ],
             'election_id' => [
-                'type' => 'INT',
-                'null' => true,
-            ],
-            'token_hash' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 255,
+                'type'       => 'BIGINT',
+                'constraint' => 20,
+                'unsigned'   => true,
                 'null'       => true,
             ],
-            'token_expires_at' => [
-                'type' => 'TIMESTAMP WITH TIME ZONE',
-                'null' => true,
-            ],
             'created_at' => [
-                'type' => 'TIMESTAMP WITH TIME ZONE',
+                'type' => 'DATETIME',
                 'null' => true,
             ],
             'updated_at' => [
-                'type' => 'TIMESTAMP WITH TIME ZONE',
+                'type' => 'DATETIME',
                 'null' => true,
             ],
         ]);
 
         $this->forge->addKey('id', true);
+        $this->forge->addKey(['role', 'is_primary']);
         $this->forge->addForeignKey('election_id', 'elections', 'id', 'CASCADE', 'SET NULL');
         $this->forge->createTable('users');
     }

@@ -93,6 +93,7 @@ class VotingEngineService
         $token = $this->normalizeToken($rawToken);
 
         $election = $this->electionModel->getActiveSession();
+
         if (! $election) {
             throw new RuntimeException('Tidak ada sesi pemilu yang aktif saat ini.');
         }
@@ -101,79 +102,118 @@ class VotingEngineService
             throw new RuntimeException('Pemungutan suara ditolak karena status pemilu bukan ACTIVE.');
         }
 
-        // Pastikan kandidat yang dipilih valid pada sesi pemilu ini
-        $candidate = $this->candidateModel
-            ->where('election_id', $election['id'])
-            ->where('id', $candidateId)
-            ->first();
+        // Pastikan kandidat yang dipilih valid pada sesi pemilu ini.
+    $candidate = $this->candidateModel
+        ->where('election_id', $election['id'])
+        ->where('id', $candidateId)
+        ->first();
 
-        if (! $candidate) {
-            throw new RuntimeException('Pilihan pasangan calon tidak valid pada sesi pemilihan ini.');
+    if (! $candidate) {
+        throw new RuntimeException('Pilihan pasangan calon tidak valid pada sesi pemilihan ini.');
+    }
+
+    $db = Database::connect();
+    $db->transBegin();
+
+    try {
+        // SQLite tidak mendukung SELECT ... FOR UPDATE.
+        // PostgreSQL tetap menggunakan pessimistic locking.
+        $lockClause = $db->DBDriver === 'Postgre' ? ' FOR UPDATE' : '';
+
+        // 1. Ambil dan kunci token.
+        $tokenQuery = $db->query(
+            'SELECT id, voter_id, status FROM voting_tokens WHERE token = ?' . $lockClause,
+            [$token]
+        );
+
+        $tokenRow = $tokenQuery->getRowArray();
+
+        if (! $tokenRow) {
+            throw new RuntimeException('Token tidak ditemukan di sistem.');
         }
 
-        $db = Database::connect();
-        $db->transBegin();
+        if ($tokenRow['status'] !== 'unused') {
+            throw new RuntimeException('Token ini sudah pernah digunakan untuk mencoblos. Suara ditolak.');
+        }
 
-        try {
-            // 1. KUNCI baris token dengan SELECT ... FOR UPDATE (Pessimistic Lock)
-            $tokenQuery = $db->query('SELECT id, voter_id, status FROM voting_tokens WHERE token = ? FOR UPDATE', [$token]);
-            $tokenRow   = $tokenQuery->getRowArray();
+        // 2. Ambil dan kunci data pemilih.
+        $voterId = (int) $tokenRow['voter_id'];
 
-            if (! $tokenRow) {
-                throw new RuntimeException('Token tidak ditemukan di sistem.');
-            }
+        $voterQuery = $db->query(
+            'SELECT id, has_voted FROM voters WHERE id = ?' . $lockClause,
+            [$voterId]
+        );
 
-            if ($tokenRow['status'] !== 'unused') {
-                throw new RuntimeException('Token ini sudah pernah digunakan untuk mencoblos. Suara ditolak.');
-            }
+        $voterRow = $voterQuery->getRowArray();
 
-            // 2. Kunci dan periksa baris pemilih terkait
-            $voterId    = (int) $tokenRow['voter_id'];
-            $voterQuery = $db->query('SELECT id, has_voted FROM voters WHERE id = ? FOR UPDATE', [$voterId]);
-            $voterRow   = $voterQuery->getRowArray();
+        if (! $voterRow) {
+            throw new RuntimeException('Data pemilih terkait token tidak valid.');
+        }
 
-            if (! $voterRow) {
-                throw new RuntimeException('Data pemilih terkait token tidak valid.');
-            }
+        if ($this->isVoted($voterRow['has_voted'])) {
+            throw new RuntimeException('Pemilih ini telah tercatat memberikan suara sebelumnya.');
+        }
 
-            if ($this->isVoted($voterRow['has_voted'])) {
-                throw new RuntimeException('Pemilih ini telah tercatat memberikan suara sebelumnya.');
-            }
+        $nowTime   = Time::now()->toDateTimeString();
+        $todayDate = Time::now()->toDateString();
 
-            $nowTime   = Time::now()->toDateTimeString();
-            $todayDate = Time::now()->toDateString();
-
-            // 3. Ubah status token menjadi 'used'
-            $db->query('UPDATE voting_tokens SET status = ?, updated_at = ? WHERE id = ?', [
+        // 3. Tandai token telah digunakan.
+        $db->query(
+            'UPDATE voting_tokens SET status = ?, updated_at = ? WHERE id = ?',
+            [
                 'used',
                 $nowTime,
                 $tokenRow['id'],
-            ]);
+            ]
+        );
 
-            // 4. Tandai pemilih telah berpartisipasi (has_voted = true)
-            $db->query('UPDATE voters SET has_voted = true, voted_at = ?, updated_at = ? WHERE id = ?', [
+        // 4. Tandai pemilih telah memberikan suara.
+        $db->query(
+            'UPDATE voters SET has_voted = ?, voted_at = ?, updated_at = ? WHERE id = ?',
+            [
+                true,
                 $todayDate,
                 $nowTime,
                 $voterId,
-            ]);
+            ]
+        );
 
-            // 5. Masukkan surat suara anonim (Zero-Knowledge Ballots)
-            // Mutlak tanpa voter_id, tanpa token_id, tanpa timestamp presisi
-            $db->query('INSERT INTO ballots (id, candidate_id) VALUES (gen_random_uuid(), ?)', [
-                $candidateId,
-            ]);
+        // 5. Buat UUID v4 menggunakan PHP.
+        // Tidak ada voter_id, token_id, maupun timestamp dalam ballot.
+        $uuidBytes = random_bytes(16);
 
-            $db->transCommit();
+        $uuidBytes[6] = chr((ord($uuidBytes[6]) & 0x0f) | 0x40);
+        $uuidBytes[8] = chr((ord($uuidBytes[8]) & 0x3f) | 0x80);
 
-            return [
-                'voted'   => true,
-                'message' => 'Suara berhasil dicatat secara sah dan rahasia.',
-            ];
-        } catch (Throwable $e) {
-            $db->transRollback();
-            throw $e;
-        }
+        $uuidHex = bin2hex($uuidBytes);
+
+        $ballotId = sprintf(
+            '%s-%s-%s-%s-%s',
+            substr($uuidHex, 0, 8),
+            substr($uuidHex, 8, 4),
+            substr($uuidHex, 12, 4),
+            substr($uuidHex, 16, 4),
+            substr($uuidHex, 20, 12),
+        );
+
+        // 6. Simpan surat suara anonim.
+        $db->table('ballots')->insert([
+            'id'           => $ballotId,
+            'candidate_id' => $candidateId,
+        ]);
+
+        $db->transCommit();
+
+        return [
+            'voted'   => true,
+            'message' => 'Suara berhasil dicatat secara sah dan rahasia.',
+        ];
+    } catch (Throwable $e) {
+        $db->transRollback();
+        throw $e;
     }
+}
+
 
     /**
      * Konversi boolean PostgreSQL ('t'/'f', true/false, 1/0)

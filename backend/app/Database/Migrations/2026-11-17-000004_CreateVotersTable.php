@@ -6,26 +6,25 @@ namespace App\Database\Migrations;
 
 use CodeIgniter\Database\Migration;
 
-class CreateVotersTable extends Migration
+final class CreateVotersTable extends Migration
 {
     public function up(): void
     {
         $this->forge->addField([
             'id' => [
-                'type'           => 'INT',
+                'type'           => 'BIGINT',
+                'constraint'     => 20,
+                'unsigned'       => true,
                 'auto_increment' => true,
-            ],
-            'election_id' => [
-                'type' => 'INT',
-                'null' => true,
             ],
             'nisn' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 20,
+                'unique'     => true,
             ],
             'name' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 150,
+                'constraint' => 255,
             ],
             'class' => [
                 'type'       => 'VARCHAR',
@@ -39,22 +38,22 @@ class CreateVotersTable extends Migration
                 'default' => false,
             ],
             'voted_at' => [
-                'type' => 'DATE',
+                'type' => 'DATETIME',
                 'null' => true,
             ],
             'created_at' => [
-                'type' => 'TIMESTAMP WITH TIME ZONE',
+                'type' => 'DATETIME',
                 'null' => true,
             ],
             'updated_at' => [
-                'type' => 'TIMESTAMP WITH TIME ZONE',
+                'type' => 'DATETIME',
                 'null' => true,
             ],
         ]);
 
         $this->forge->addKey('id', true);
-        $this->forge->addKey(['election_id', 'nisn'], false, true);
-        $this->forge->addForeignKey('election_id', 'elections', 'id', 'CASCADE', 'CASCADE');
+        $this->forge->addKey(['nisn', 'birth_date']);
+        $this->forge->addKey('has_voted');
         $this->forge->createTable('voters');
     }
 

@@ -6,7 +6,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class VoterModel extends Model
+final class VoterModel extends Model
 {
     protected $table            = 'voters';
     protected $primaryKey       = 'id';
@@ -15,15 +15,12 @@ class VoterModel extends Model
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
     protected $allowedFields    = [
-        'election_id',
         'nisn',
         'name',
         'class',
         'birth_date',
         'has_voted',
         'voted_at',
-        'created_at',
-        'updated_at',
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -36,14 +33,14 @@ class VoterModel extends Model
     protected $updatedField  = 'updated_at';
 
     /**
-     * Cari pemilih berdasarkan NISN pada sesi pemilu tertentu
+     * Find voter by NISN and birth date.
+     *
+     * @return array<string, mixed>|null
      */
-    public function findByNisn(string $nisn, ?int $electionId = null): ?array
+    public function findByNisnAndDob(string $nisn, string $birthDate): ?array
     {
-        $builder = $this->where('nisn', $nisn);
-        if ($electionId !== null) {
-            $builder->where('election_id', $electionId);
-        }
-        return $builder->first();
+        return $this->where('nisn', $nisn)
+            ->where('birth_date', $birthDate)
+            ->first();
     }
 }

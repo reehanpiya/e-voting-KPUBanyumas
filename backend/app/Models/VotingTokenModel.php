@@ -6,8 +6,11 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class VotingTokenModel extends Model
+final class VotingTokenModel extends Model
 {
+    public const STATUS_UNUSED = 'unused';
+    public const STATUS_USED   = 'used';
+
     protected $table            = 'voting_tokens';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
@@ -18,8 +21,6 @@ class VotingTokenModel extends Model
         'token',
         'voter_id',
         'status',
-        'created_at',
-        'updated_at',
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -30,24 +31,4 @@ class VotingTokenModel extends Model
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
-
-    /**
-     * Cari token berdasarkan voter_id
-     */
-    public function findByVoterId(int $voterId): ?array
-    {
-        return $this->where('voter_id', $voterId)
-            ->orderBy('id', 'DESC')
-            ->first();
-    }
-
-    /**
-     * Cari token aktif (unused) berdasarkan string token
-     */
-    public function findUnusedToken(string $token): ?array
-    {
-        return $this->where('token', $token)
-            ->where('status', 'unused')
-            ->first();
-    }
 }

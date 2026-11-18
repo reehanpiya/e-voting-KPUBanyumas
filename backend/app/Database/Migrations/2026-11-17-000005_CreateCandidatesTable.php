@@ -6,29 +6,29 @@ namespace App\Database\Migrations;
 
 use CodeIgniter\Database\Migration;
 
-class CreateCandidatesTable extends Migration
+final class CreateCandidatesTable extends Migration
 {
     public function up(): void
     {
         $this->forge->addField([
             'id' => [
-                'type'           => 'INT',
+                'type'           => 'BIGINT',
+                'constraint'     => 20,
+                'unsigned'       => true,
                 'auto_increment' => true,
             ],
-            'election_id' => [
-                'type' => 'INT',
-                'null' => true,
-            ],
             'number' => [
-                'type' => 'INT',
+                'type'       => 'INT',
+                'constraint' => 11,
+                'unique'     => true,
             ],
             'name' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 150,
+                'constraint' => 255,
             ],
             'photo_url' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 255,
+                'constraint' => 500,
                 'null'       => true,
             ],
             'vision' => [
@@ -44,18 +44,17 @@ class CreateCandidatesTable extends Migration
                 'null' => true,
             ],
             'created_at' => [
-                'type' => 'TIMESTAMP WITH TIME ZONE',
+                'type' => 'DATETIME',
                 'null' => true,
             ],
             'updated_at' => [
-                'type' => 'TIMESTAMP WITH TIME ZONE',
+                'type' => 'DATETIME',
                 'null' => true,
             ],
         ]);
 
         $this->forge->addKey('id', true);
-        $this->forge->addKey(['election_id', 'number'], false, true);
-        $this->forge->addForeignKey('election_id', 'elections', 'id', 'CASCADE', 'CASCADE');
+        $this->forge->addKey('number');
         $this->forge->createTable('candidates');
     }
 
