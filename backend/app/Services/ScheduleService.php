@@ -29,7 +29,6 @@ class ScheduleService
 
         return [
             'election_id' => $election['id'],
-            'status'      => $election['status'],
             'start_time'  => $election['start_time'],
             'end_time'    => $election['end_time'],
         ];
@@ -66,7 +65,6 @@ class ScheduleService
 
         return [
             'election_id' => $election['id'],
-            'status'      => $election['status'],
             'start_time'  => $formattedStart,
             'end_time'    => $formattedEnd,
         ];

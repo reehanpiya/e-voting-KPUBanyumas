@@ -47,17 +47,17 @@ class ReportingService
         $election = $this->getActiveElection();
         $db       = Database::connect();
 
-        $totalDpt   = $this->voterModel->where('election_id', $election['id'])->countAllResults();
+        $votingActive = $election['status'] === 'ACTIVE';
+        $totalDpt   = $this->voterModel->countAllResults();
         $votedCount = $db->table('voters')
-            ->where('election_id', $election['id'])
             ->where('has_voted IS TRUE', null, false)
             ->countAllResults();
 
         $percentage = $totalDpt > 0 ? round(($votedCount / $totalDpt) * 100, 2) : 0.0;
 
         return [
+            'available'          => $votingActive,
             'school_name'        => $election['school_name'] ?? 'Pemilu Sekolah',
-            'status'             => $election['status'],
             'total_dpt'          => $totalDpt,
             'total_votes_in'     => $votedCount,
             'turnout_percentage' => $percentage,
@@ -97,7 +97,6 @@ class ReportingService
         $db = Database::connect();
         $ballotsCount = $db->table('ballots')->countAllResults();
         $votersVotedCount = $db->table('voters')
-            ->where('election_id', $election['id'])
             ->where('has_voted IS TRUE', null, false)
             ->countAllResults();
 
@@ -129,9 +128,9 @@ class ReportingService
     private function calculateResults(array $election): array
     {
         $db = Database::connect();
-        $candidates = $this->candidateModel->getByElection((int) $election['id']);
+        $candidates = $this->candidateModel->orderBy('number', 'ASC')->findAll();
 
-        $totalDpt = $this->voterModel->where('election_id', $election['id'])->countAllResults();
+        $totalDpt = $this->voterModel->countAllResults();
 
         // Hitung suara per kandidat dari tabel ballots
         $countsQuery = $db->table('ballots')

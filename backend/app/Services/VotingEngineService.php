@@ -66,7 +66,7 @@ class VotingEngineService
         }
 
         // Ambil data paslon yang aktif untuk ditampilkan di bilik suara
-        $candidates = $this->candidateModel->getByElection((int) $election['id']);
+        $candidates = $this->candidateModel->orderBy('number', 'ASC')->findAll();
 
         return [
             'token'      => $token,
@@ -104,7 +104,6 @@ class VotingEngineService
 
         // Pastikan kandidat yang dipilih valid pada sesi pemilu ini.
     $candidate = $this->candidateModel
-        ->where('election_id', $election['id'])
         ->where('id', $candidateId)
         ->first();
 

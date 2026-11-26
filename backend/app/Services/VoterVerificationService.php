@@ -43,7 +43,6 @@ class VoterVerificationService
         }
 
         $voter = $this->voterModel
-            ->where('election_id', $election['id'])
             ->where('nisn', trim($nisn))
             ->where('birth_date', $formattedDob)
             ->first();
@@ -55,7 +54,6 @@ class VoterVerificationService
         return [
             'election' => [
                 'school_name' => $election['school_name'] ?? 'Pemilu Sekolah',
-                'status'      => $election['status'],
             ],
             'voter' => [
                 'name'      => $voter['name'],
@@ -87,7 +85,6 @@ class VoterVerificationService
         }
 
         $voter = $this->voterModel
-            ->where('election_id', $election['id'])
             ->where('nisn', trim($nisn))
             ->where('birth_date', $formattedDob)
             ->first();

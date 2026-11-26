@@ -39,6 +39,8 @@ final class AuthService
             throw new RuntimeException('Kredensial login tidak valid. Periksa username dan password.');
         }
 
+        $user['is_primary'] = $this->normalizeBoolean($user['is_primary'] ?? false);
+
         // Generate cryptographically secure 64-character token
         $plainToken = bin2hex(random_bytes(32));
         $tokenHash  = hash('sha256', $plainToken);
@@ -80,6 +82,12 @@ final class AuthService
         $this->auditLogService->log($userId, 'USER_LOGOUT', $ipAddress);
     }
 
+    private function normalizeBoolean(mixed $value): bool
+    {
+        if (is_bool($value)) return $value;
+        return in_array(strtolower(trim((string) $value)), ['1', 't', 'true', 'yes', 'on'], true);
+    }
+
     /**
      * Verify token and return associated active user.
      *
@@ -100,6 +108,8 @@ final class AuthService
         if ($user === null) {
             return null;
         }
+
+        $user['is_primary'] = $this->normalizeBoolean($user['is_primary'] ?? false);
 
         // Update last_used_at timestamp
         $this->tokenModel->update($record['id'], [

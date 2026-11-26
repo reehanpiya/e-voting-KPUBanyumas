@@ -40,12 +40,11 @@ class CandidateService
     public function getAll(): array
     {
         $election   = $this->getActiveElection();
-        $candidates = $this->candidateModel->getByElection((int) $election['id']);
+        $candidates = $this->candidateModel->orderBy('number', 'ASC')->findAll();
 
         return [
             'election' => [
                 'id'                   => $election['id'],
-                'status'               => $election['status'],
                 'candidates_locked_at' => $election['candidates_locked_at'],
                 'is_locked'            => ! empty($election['candidates_locked_at']),
             ],
@@ -60,7 +59,6 @@ class CandidateService
     {
         $election  = $this->getActiveElection();
         $candidate = $this->candidateModel
-            ->where('election_id', $election['id'])
             ->where('id', $id)
             ->first();
 
@@ -88,7 +86,6 @@ class CandidateService
 
         // Cek duplikasi nomor urut
         $existing = $this->candidateModel
-            ->where('election_id', $election['id'])
             ->where('number', (int) $data['number'])
             ->first();
 
@@ -102,7 +99,6 @@ class CandidateService
         }
 
         $candidateId = $this->candidateModel->insert([
-            'election_id' => $election['id'],
             'number'      => (int) $data['number'],
             'name'        => trim($data['name']),
             'photo_url'   => $photoUrl,
@@ -133,7 +129,6 @@ class CandidateService
         // Cek duplikasi nomor urut jika nomor diubah
         if (isset($data['number']) && (int) $data['number'] !== (int) $candidate['number']) {
             $existing = $this->candidateModel
-                ->where('election_id', $election['id'])
                 ->where('number', (int) $data['number'])
                 ->where('id !=', $id)
                 ->first();
@@ -205,7 +200,7 @@ class CandidateService
             throw new RuntimeException('Data kandidat sudah dikunci sebelumnya pada ' . $election['candidates_locked_at']);
         }
 
-        $candidatesCount = $this->candidateModel->where('election_id', $election['id'])->countAllResults();
+        $candidatesCount = $this->candidateModel->countAllResults();
         if ($candidatesCount === 0) {
             throw new RuntimeException('Kandidat tidak dapat dikunci karena belum ada pasangan calon yang terdaftar.');
         }
@@ -216,7 +211,6 @@ class CandidateService
         ]);
 
         return [
-            'election_id'          => $election['id'],
             'total_candidates'     => $candidatesCount,
             'candidates_locked_at' => $lockTime,
         ];

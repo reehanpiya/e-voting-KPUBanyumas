@@ -16,6 +16,7 @@ final class AuthContext
      */
     public static function setUser(array $user, string $token): void
     {
+        $user['is_primary'] = self::normalizeBoolean($user['is_primary'] ?? false);
         self::$user  = $user;
         self::$token = $token;
     }
@@ -45,7 +46,13 @@ final class AuthContext
 
     public static function isPrimary(): bool
     {
-        return ! empty(self::$user['is_primary']);
+        return self::normalizeBoolean(self::$user['is_primary'] ?? false);
+    }
+
+    private static function normalizeBoolean(mixed $value): bool
+    {
+        if (is_bool($value)) return $value;
+        return in_array(strtolower(trim((string) $value)), ['1', 't', 'true', 'yes', 'on'], true);
     }
 
     public static function clear(): void

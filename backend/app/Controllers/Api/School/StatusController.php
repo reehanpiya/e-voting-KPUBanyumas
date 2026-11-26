@@ -35,6 +35,7 @@ class StatusController extends BaseController
             return ApiResponse::success('Status pemilu saat ini.', [
                 'id'          => $election['id'],
                 'school_name' => $election['school_name'],
+                'npsn'        => $election['npsn'],
                 'status'      => $election['status'],
             ]);
         } catch (Throwable $e) {

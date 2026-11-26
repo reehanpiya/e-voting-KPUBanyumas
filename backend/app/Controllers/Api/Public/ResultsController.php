@@ -43,7 +43,7 @@ class ResultsController extends BaseController
             $data = $this->reportingService->getPublicResults();
             return ApiResponse::success('Hasil resmi pemilihan berhasil dimuat.', $data);
         } catch (Throwable $e) {
-            return ApiResponse::error($e->getMessage(), 403);
+            return ApiResponse::error('Data hasil publik belum tersedia.', 404);
         }
     }
 }

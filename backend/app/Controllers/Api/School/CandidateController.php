@@ -7,6 +7,7 @@ namespace App\Controllers\Api\School;
 use App\Controllers\BaseController;
 use App\Services\ApiResponse;
 use App\Services\CandidateService;
+use App\Services\AuthContext;
 use CodeIgniter\HTTP\ResponseInterface;
 use Throwable;
 
@@ -27,6 +28,9 @@ class CandidateController extends BaseController
     {
         try {
             $result = $this->candidateService->getAll();
+            if (AuthContext::getRole() !== 'admin_sekolah') {
+                unset($result['election']);
+            }
             return ApiResponse::success('Daftar kandidat berhasil dimuat.', $result);
         } catch (Throwable $e) {
             return ApiResponse::error($e->getMessage(), 400);
@@ -37,6 +41,16 @@ class CandidateController extends BaseController
      * GET /api/school/candidates/{id}
      * Detail kandidat
      */
+    /** GET /api/school/candidates/manage (admin only) */
+    public function manage(): ResponseInterface
+    {
+        try {
+            $result = $this->candidateService->getAll();
+            return ApiResponse::success('Daftar kandidat berhasil dimuat.', $result);
+        } catch (Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 400);
+        }
+    }
     public function show(int $id): ResponseInterface
     {
         try {
@@ -65,11 +79,11 @@ class CandidateController extends BaseController
 
             $photoFile = $this->request->getFile('photo');
             $data      = [
-                'number'  => (int) $this->request->getPost('number'),
-                'name'    => (string) $this->request->getPost('name'),
-                'vision'  => $this->request->getPost('vision'),
-                'mission' => $this->request->getPost('mission'),
-                'program' => $this->request->getPost('program'),
+                'number'  => (int) $this->request->getVar('number'),
+                'name'    => (string) $this->request->getVar('name'),
+                'vision'  => $this->request->getVar('vision'),
+                'mission' => $this->request->getVar('mission'),
+                'program' => $this->request->getVar('program'),
             ];
 
             $result = $this->candidateService->create($data, $photoFile);

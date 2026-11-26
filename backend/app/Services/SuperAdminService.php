@@ -184,6 +184,63 @@ final class SuperAdminService
     }
 
     /**
+     * Replace school admin passwords and return the credentials once.
+     *
+     * @return array{school_name: string, accounts: list<array<string, mixed>>}
+     */
+    public function reissueCredentials(int $electionId, ?int $superAdminId, ?string $ipAddress): array
+    {
+        $election = $this->electionModel->find($electionId);
+        if ($election === null || in_array($election['status'], [ElectionStateService::STATUS_READY, ElectionStateService::STATUS_PENDING], true)) {
+            throw new RuntimeException('Kredensial hanya dapat diterbitkan ulang untuk sekolah yang sudah disetujui.');
+        }
+
+        $db = $this->electionModel->db;
+        $db->transBegin();
+        try {
+            $userModel = new UserModel();
+            $users = $userModel->where('election_id', $electionId)
+                ->where('role', UserModel::ROLE_ADMIN_SEKOLAH)
+                ->orderBy('is_primary', 'DESC')
+                ->orderBy('id', 'ASC')
+                ->findAll();
+
+            if (count($users) !== 5) {
+                throw new RuntimeException('Akun admin sekolah tidak lengkap; kredensial tidak diubah.');
+            }
+
+            $accounts = [];
+            foreach ($users as $user) {
+                $password = $this->generateSecurePassword();
+                $userModel->update((int) $user['id'], [
+                    'password_hash' => password_hash($password, PASSWORD_BCRYPT),
+                ]);
+                $accounts[] = [
+                    'role'           => UserModel::ROLE_ADMIN_SEKOLAH,
+                    'is_primary'     => in_array(strtolower(trim((string) ($user['is_primary'] ?? ''))), ['1', 't', 'true', 'yes', 'on'], true),
+                    'name'           => $user['name'],
+                    'username'       => $user['username'],
+                    'plain_password' => $password,
+                ];
+            }
+
+            $this->auditLogService->log(
+                $superAdminId,
+                sprintf('SUPER_ADMIN_REISSUE_CREDENTIALS: election %d (%s)', $electionId, $election['school_name']),
+                $ipAddress
+            );
+            if ($db->transStatus() === false) {
+                throw new DatabaseException('Gagal menerbitkan ulang kredensial sekolah.');
+            }
+            $db->transCommit();
+
+            return ['school_name' => (string) $election['school_name'], 'accounts' => $accounts];
+        } catch (Throwable $e) {
+            $db->transRollback();
+            throw $e;
+        }
+    }
+    /**
      * Get macro progress percentage of election phases (Zero voting data exposed).
      *
      * @return array<string, mixed>

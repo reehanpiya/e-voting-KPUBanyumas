@@ -40,7 +40,7 @@ class VoterService
     public function getVoters(int $page = 1, int $perPage = 50, ?string $search = null): array
     {
         $election = $this->getActiveElection();
-        $builder  = $this->voterModel->where('election_id', $election['id']);
+        $builder  = $this->voterModel;
 
         if ($search !== null && trim($search) !== '') {
             $builder->groupStart()
@@ -95,6 +95,13 @@ class VoterService
         if (! $file) {
             throw new RuntimeException('Gagal membuka file CSV.');
         }
+        $firstLine = fgets($file);
+        if ($firstLine === false) {
+            fclose($file);
+            throw new RuntimeException('File CSV kosong.');
+        }
+        $delimiter = substr_count($firstLine, ';') > substr_count($firstLine, ',') ? ';' : ',';
+        rewind($file);
 
         $rowNumber    = 0;
         $validRows    = [];
@@ -102,7 +109,7 @@ class VoterService
         $nisnMapInCsv = [];
 
         // 2. Baca baris per baris
-        while (($line = fgetcsv($file, 1000, ',')) !== false) {
+        while (($line = fgetcsv($file, 1000, $delimiter)) !== false) {
             $rowNumber++;
 
             // Abaikan baris kosong
@@ -111,7 +118,8 @@ class VoterService
             }
 
             // Abaikan header jika ada
-            if ($rowNumber === 1 && (strtolower(trim($line[0])) === 'nisn' || strtolower(trim($line[0])) === '"nisn"')) {
+            $firstCell = preg_replace('/^\xEF\xBB\xBF/u', '', strtolower(trim((string) $line[0])));
+            if ($rowNumber === 1 && in_array($firstCell, ['nisn', '"nisn"'], true)) {
                 continue;
             }
 
@@ -123,7 +131,7 @@ class VoterService
                 continue;
             }
 
-            $nisn      = trim($line[0]);
+            $nisn      = preg_replace('/^\xEF\xBB\xBF/u', '', trim((string) $line[0]));
             $name      = trim($line[1]);
             $class     = trim($line[2]);
             $birthDate = trim($line[3]);
@@ -168,7 +176,6 @@ class VoterService
                 ];
             } else {
                 $validRows[] = [
-                    'election_id' => $election['id'],
                     'nisn'        => $nisn,
                     'name'        => $name,
                     'class'       => $class,
@@ -202,7 +209,7 @@ class VoterService
 
         try {
             // Hapus DPT lama pada sesi ini jika belum dikunci untuk re-import bersih
-            $this->voterModel->where('election_id', $election['id'])->delete();
+            $this->voterModel->where('id >', 0)->delete();
 
             // Insert batch untuk ribuan baris dengan cepat
             $this->voterModel->insertBatch($validRows);
@@ -235,7 +242,7 @@ class VoterService
             throw new RuntimeException('DPT sudah dikunci sebelumnya pada ' . $election['dpt_locked_at']);
         }
 
-        $voterCount = $this->voterModel->where('election_id', $election['id'])->countAllResults();
+        $voterCount = $this->voterModel->countAllResults();
         if ($voterCount === 0) {
             throw new RuntimeException('DPT tidak dapat dikunci karena belum ada data pemilih yang diimpor.');
         }
@@ -246,7 +253,6 @@ class VoterService
         ]);
 
         return [
-            'election_id'   => $election['id'],
             'total_voters'  => $voterCount,
             'dpt_locked_at' => $lockTime,
         ];
